@@ -1,0 +1,33 @@
+name: garbage_classification_app
+description: "A green life garbage classification application."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # 状态管理
+  provider: ^6.0.0
+  
+  # 网络与后端通信
+  http: ^1.1.0 
+  
+  # 核心功能插件
+  image_picker: ^1.0.4        # 拍照功能
+  fl_chart: ^0.65.0           # 统计饼图功能
+  flutter_swiper_view: ^1.1.8 # 轮播图
+  shared_preferences: ^2.2.2  # 本地存储登录状态
+  lottie: ^3.1.0              # 动画库
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/lottie/
+    - assets/beijing/
+    - assets/card/
