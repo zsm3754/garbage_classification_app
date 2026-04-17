@@ -139,6 +139,10 @@ class AuthProvider with ChangeNotifier {
         // Use user_id as token for now (since backend doesn't return a separate token)
         _token = backendData['user_id']?.toString() ?? "";
         _userInfo = backendData;
+        // Ensure username is saved in userInfo
+        if (_userInfo != null && _userInfo!['username'] == null) {
+          _userInfo!['username'] = username;
+        }
         _isAuthenticated = true;
         
         print('User Info: $_userInfo');

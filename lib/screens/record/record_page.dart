@@ -51,6 +51,78 @@ class _RecordPageState extends State<RecordPage> {
     }
   }
 
+  // Calculate real category statistics from disposal records
+  Map<String, int> _calculateCategoryStatistics() {
+    Map<String, int> categoryCounts = {
+      '1': 0, // 1: 'can_recycle'
+      '2': 0, // 2: 'harmful'
+      '3': 0, // 3: 'kitchen'
+      '4': 0, // 4: 'other'
+    };
+    
+    for (var record in _disposalRecords) {
+      int categoryId = record['category_id'] ?? 1;
+      categoryCounts[categoryId.toString()] = (categoryCounts[categoryId.toString()] ?? 0) + 1;
+    }
+    
+    return categoryCounts;
+  }
+
+  // Build pie chart sections from real disposal records data
+  List<PieChartSectionData> _buildPieChartSections() {
+    final categoryStats = _calculateCategoryStatistics();
+    final totalCount = categoryStats.values.fold(0, (sum, count) => sum + count);
+    
+    // If no records, return default data
+    if (totalCount == 0) {
+      return [
+        PieChartSectionData(
+          color: Colors.grey,
+          value: 1,
+          title: '0%',
+          radius: 60,
+          titleStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ];
+    }
+    
+    final sections = <PieChartSectionData>[];
+    
+    // Category mapping: id -> (name, color, display_name)
+    final categoryInfo = {
+      '1': ('Recyclable', Colors.blue, 'Recyclable'),
+      '2': ('Harmful', Colors.red, 'Harmful'),
+      '3': ('Kitchen', Colors.green, 'Kitchen'),
+      '4': ('Other', Colors.grey, 'Other'),
+    };
+    
+    for (final entry in categoryStats.entries) {
+      final count = entry.value;
+      if (count > 0) {
+        final info = categoryInfo[entry.key]!;
+        final percentage = (count / totalCount * 100).round();
+        
+        sections.add(PieChartSectionData(
+          color: info.$2,
+          value: count.toDouble(),
+          title: '${info.$3}\n${percentage}%',
+          radius: 60,
+          titleStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ));
+      }
+    }
+    
+    return sections;
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -216,71 +288,26 @@ class _RecordPageState extends State<RecordPage> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-          // 饼图
+          // Pie chart
           SizedBox(
             height: 280,
             child: PieChart(
               PieChartData(
-                sections: [
-                  PieChartSectionData(
-                    color: Colors.red,
-                    value: 40,
-                    title: '有害\n40%',
-                    radius: 60,
-                    titleStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  PieChartSectionData(
-                    color: Colors.blue,
-                    value: 30,
-                    title: '可回收\n30%',
-                    radius: 60,
-                    titleStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  PieChartSectionData(
-                    color: Colors.orange,
-                    value: 20,
-                    title: '湿垃圾\n20%',
-                    radius: 60,
-                    titleStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  PieChartSectionData(
-                    color: Colors.grey,
-                    value: 10,
-                    title: '干垃圾\n10%',
-                    radius: 60,
-                    titleStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+                sections: _buildPieChartSections(),
               ),
             ),
           ),
-          // 图例
+          // Legend
           Padding(
             padding: const EdgeInsets.all(16),
             child: Wrap(
               spacing: 16,
               runSpacing: 8,
               children: [
-                _buildLegendItem("有害垃圾", Colors.red),
-                _buildLegendItem("可回收物", Colors.blue),
-                _buildLegendItem("湿垃圾", Colors.orange),
-                _buildLegendItem("干垃圾", Colors.grey),
+                _buildLegendItem("Harmful", Colors.red),
+                _buildLegendItem("Recyclable", Colors.blue),
+                _buildLegendItem("Kitchen", Colors.green),
+                _buildLegendItem("Other", Colors.grey),
               ],
             ),
           ),
