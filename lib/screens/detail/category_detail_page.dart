@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../knowledge/article_detail_page.dart';
 
 class CategoryDetailPage extends StatefulWidget {
   final String categoryName;
@@ -130,6 +131,17 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 处理特殊分类：分类小贴士和环保常识
+    if (widget.categoryName == "分类小贴士" || widget.categoryName == "环保常识") {
+      final categoryId = widget.categoryName == "分类小贴士" ? 1 : 2;
+      final color = widget.categoryName == "分类小贴士" ? Colors.green : Colors.purple;
+      
+      return ArticleDetailPage(
+        title: widget.categoryName,
+        categoryId: categoryId,
+      );
+    }
+
     final categoryColor = _getCategoryColor();
     final categoryIcon = _getCategoryIcon();
     final categoryDetail = _categoryDetail;

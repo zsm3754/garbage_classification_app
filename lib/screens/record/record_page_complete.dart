@@ -93,8 +93,8 @@ class _RecordPageCompleteState extends State<RecordPageComplete> {
   }
 
   Widget _buildStatisticsTab() {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, _) {
+    return Consumer2<UserProvider, AuthProvider>(
+      builder: (context, userProvider, authProvider, _) {
         final stats = userProvider.statistics;
         
         if (stats == null || stats.isEmpty) {
@@ -159,7 +159,7 @@ class _RecordPageCompleteState extends State<RecordPageComplete> {
                       ),
                       const Divider(),
                       _buildStatItem(
-                        "${stats['totalPoints'] ?? 0}",
+                        "${authProvider.userPoints}",
                         "总积分",
                         Icons.star,
                       ),

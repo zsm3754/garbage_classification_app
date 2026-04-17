@@ -44,8 +44,8 @@ class _ProfilePageCompleteState extends State<ProfilePageComplete> {
         child: Column(
           children: [
             // 用户信息卡片
-            Consumer<UserProvider>(
-              builder: (context, userProvider, _) {
+            Consumer2<UserProvider, AuthProvider>(
+              builder: (context, userProvider, authProvider, _) {
                 final stats = userProvider.statistics;
                 return Container(
                   margin: const EdgeInsets.all(16),
@@ -94,7 +94,7 @@ class _ProfilePageCompleteState extends State<ProfilePageComplete> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              "积分: ${stats?['totalPoints'] ?? 0}",
+                              "积分: ${authProvider.userPoints}",
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -110,8 +110,8 @@ class _ProfilePageCompleteState extends State<ProfilePageComplete> {
             ),
 
             // 统计卡片
-            Consumer<UserProvider>(
-              builder: (context, userProvider, _) {
+            Consumer2<UserProvider, AuthProvider>(
+              builder: (context, userProvider, authProvider, _) {
                 final stats = userProvider.statistics;
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -119,7 +119,7 @@ class _ProfilePageCompleteState extends State<ProfilePageComplete> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildStatCard(
-                        "${stats?['totalDisposals'] ?? 0}",
+                        "${stats?['disposal_count'] ?? stats?['totalDisposals'] ?? 0}",
                         "投放次数",
                         Colors.blue,
                       ),
@@ -129,9 +129,9 @@ class _ProfilePageCompleteState extends State<ProfilePageComplete> {
                         Colors.orange,
                       ),
                       _buildStatCard(
-                        "${stats?['totalPoints'] ?? 0}",
+                        "${authProvider.userPoints}",
                         "总积分",
-                        Colors.purple,
+                        Colors.green,
                       ),
                     ],
                   ),

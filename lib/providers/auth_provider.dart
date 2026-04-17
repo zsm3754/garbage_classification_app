@@ -32,7 +32,10 @@ class AuthProvider with ChangeNotifier {
       if (_token.isNotEmpty) {
         ApiService.setAuthToken(_token);
         await _fetchUserInfo();
-        _isAuthenticated = true;
+        // Only set authenticated if user info was successfully loaded
+        if (_userInfo != null) {
+          _isAuthenticated = true;
+        }
         notifyListeners();
       }
     } catch (e) {
@@ -125,11 +128,21 @@ class AuthProvider with ChangeNotifier {
       
       if (response['success']) {
         final data = response['data'];
+        print('=== AuthProvider Login Debug ===');
+        print('API Response: $response');
+        print('Data: $data');
         
-        // 简化：假设后端直接返回token在data中
-        _token = data['access_token'] ?? data['token'] ?? "";
-        _userInfo = data['user'] ?? data;
+        // Handle backend response format: data['data'] contains the actual response
+        final backendData = data['data'] ?? data;
+        print('Backend Data: $backendData');
+        
+        // Use user_id as token for now (since backend doesn't return a separate token)
+        _token = backendData['user_id']?.toString() ?? "";
+        _userInfo = backendData;
         _isAuthenticated = true;
+        
+        print('User Info: $_userInfo');
+        print('Token: $_token');
         
         if (_token.isNotEmpty) {
           ApiService.setAuthToken(_token);
@@ -261,6 +274,14 @@ class AuthProvider with ChangeNotifier {
     return 0;
   }
 
+  // 获取投放次数
+  int get disposalCount {
+    if (_userProfile != null && _userProfile!['disposal_count'] != null) {
+      return int.tryParse(_userProfile!['disposal_count'].toString()) ?? 0;
+    }
+    return 0;
+  }
+
   // 获取用户等级
   int get userLevel {
     if (_userProfile != null && _userProfile!['level'] != null) {
@@ -275,6 +296,91 @@ class AuthProvider with ChangeNotifier {
       return int.tryParse(_userProfile!['rank_score'].toString()) ?? 0;
     }
     return 0;
+  }
+
+  // 真实排名相关属性
+  int _realRanking = 0;
+  int _totalUsers = 0;
+  bool _isLoadingRanking = false;
+
+  // 获取真实排名
+  int get realRanking => _realRanking;
+  int get totalUsers => _totalUsers;
+  bool get isLoadingRanking => _isLoadingRanking;
+
+  // 获取排名显示文本
+  String get rankingText {
+    if (_realRanking > 0 && _realRanking != 999) {
+      return "第$_realRanking名";
+    } else if (_realRanking == 999) {
+      return "第999名";
+    }
+    return "排名计算中...";
+  }
+
+  // 加载真实排名
+  Future<void> loadRealRanking() async {
+    if (_isLoadingRanking) return;
+    
+    _isLoadingRanking = true;
+    notifyListeners();
+
+    try {
+      if (userId == null) {
+        print('=== User not logged in, cannot load ranking ===');
+        _realRanking = 999;
+        return;
+      }
+      
+      final currentUserId = userId.toString();
+      print('=== start loading ranking, user ID: $currentUserId ===');
+      
+      final response = await ApiService.getUserRanking(userId: currentUserId);
+      print('Ranking API response: $response');
+      
+      if (response['success'] == true) {
+        final data = response['data'];
+        print('排名数据: $data');
+        
+        // 根据你的接口格式获取排名
+        _realRanking = data['rank'] ?? 999;
+        print('设置排名: $_realRanking');
+        
+        // 更新用户积分（如果后端返回了积分）
+        if (data['total_points'] != null) {
+          if (_userProfile == null) _userProfile = {};
+          _userProfile!['total_points'] = data['total_points'];
+          print('更新用户积分: ${data['total_points']}');
+        }
+      } else {
+        print('排名API失败: ${response['error']}');
+        _realRanking = 999; // 设置默认排名
+      }
+    } catch (e) {
+      print('加载排名异常: $e');
+      _realRanking = 999;
+    } finally {
+      _isLoadingRanking = false;
+      print('排名加载完成，最终排名: $_realRanking');
+      notifyListeners();
+    }
+  }
+
+  // 刷新用户数据（包括积分和投放次数）
+  Future<void> refreshUserData() async {
+    print('=== 刷新用户数据开始 ===');
+    try {
+      // 重新加载用户资料以获取最新的积分和投放次数
+      await refreshUserProfile();
+      print('用户资料刷新完成: $_userProfile');
+      
+      // 同时刷新排名
+      await loadRealRanking();
+      print('排名刷新完成: $_realRanking');
+    } catch (e) {
+      print('刷新用户数据失败: $e');
+    }
+    print('=== 刷新用户数据完成 ===');
   }
 
   // 清除错误信息

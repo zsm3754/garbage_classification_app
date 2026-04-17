@@ -34,10 +34,13 @@ class UserProvider extends ChangeNotifier {
   Future<bool> login(String username, String password) async {
     try {
       final response = await _apiService.loginUser(username, password);
-      if (response['token'] != null) {
-        _userId = response['user_id']?.toString();
+      if (response['success'] == true && response['data'] != null) {
+        final data = response['data'];
+        // Handle backend response format: data['data'] contains the actual response
+        final backendData = data['data'] ?? data;
+        _userId = backendData['user_id']?.toString();
         _username = username;
-        _token = response['token'];
+        _token = backendData['user_id']?.toString(); // Using user_id as token for now
         _isLoggedIn = true;
         notifyListeners();
         return true;
@@ -58,6 +61,14 @@ class UserProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Load statistics error: $e');
     }
+  }
+
+  // 刷新统计数据（用于投放后更新）
+  Future<void> refreshStatistics() async {
+    debugPrint('=== 刷新统计数据开始 ===');
+    await loadStatistics();
+    debugPrint('=== 刷新统计数据完成 ===');
+    debugPrint('当前统计数据: $_statistics');
   }
 
   Future<void> loadAchievements() async {
@@ -131,10 +142,12 @@ class SearchProvider extends ChangeNotifier {
   List<dynamic> _searchResults = [];
   bool _isLoading = false;
   String? _error;
+  List<String> _searchHistory = [];
 
   List<dynamic> get searchResults => _searchResults;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  List<String> get searchHistory => _searchHistory;
 
   final ApiService _apiService = ApiService();
 
@@ -161,6 +174,39 @@ class SearchProvider extends ChangeNotifier {
     _searchResults = [];
     _error = null;
     notifyListeners();
+  }
+
+  // Save search history only when user explicitly submits
+  Future<void> saveSearchHistory(String userId, String keyword) async {
+    try {
+      await _apiService.addSearchHistory(keyword, userId: userId);
+    } catch (e) {
+      print('Failed to save search history: $e');
+    }
+  }
+
+  // Load search history from backend
+  Future<void> loadSearchHistory({String? userId}) async {
+    try {
+      final history = await _apiService.getSearchHistory(userId: userId);
+      _searchHistory = List<String>.from(history.map((item) => item.toString()));
+      notifyListeners();
+    } catch (e) {
+      print('Failed to load search history: $e');
+    }
+  }
+
+  // Clear search history
+  Future<void> clearHistory(String userId) async {
+    _searchHistory.clear();
+    notifyListeners();
+    
+    // Also clear from server
+    try {
+      await ApiService.clearAllSearchHistory(userId: userId);
+    } catch (e) {
+      print('Failed to clear server search history: $e');
+    }
   }
 }
 

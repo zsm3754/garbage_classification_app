@@ -205,27 +205,41 @@ class ApiService {
   }
 
   // 添加搜索历史
-  Future<bool> addSearchHistory(String searchQuery) async {
+  Future<bool> addSearchHistory(String searchQuery, {String? userId}) async {
     try {
+      // 如果没有传入userId，尝试从本地存储获取
+      if (userId == null) {
+        final prefs = await SharedPreferences.getInstance();
+        userId = prefs.getString('user_id') ?? '1'; // 默认使用用户ID=1，与profile接口一致
+      }
+      
       final response = await http.post(
         Uri.parse('$baseUrl/search/history/add'),
         headers: _getHeaders(),
-        body: jsonEncode({'search_query': searchQuery}),
+        body: jsonEncode({
+          'user_id': int.tryParse(userId) ?? 1,
+          'search_query': searchQuery
+        }),
       );
       
-      return response.statusCode == 200;
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['code'] == 200;
     } catch (e) {
       return false;
     }
   }
 
   // 获取搜索历史
-  Future<List<dynamic>> getSearchHistory() async {
+  Future<List<dynamic>> getSearchHistory({String? userId}) async {
     try {
-      // 需要用户ID，暂时返回空列表
-      // 实际使用时需要从AuthProvider获取用户ID
+      // 如果没有传入userId，尝试从本地存储获取
+      if (userId == null) {
+        final prefs = await SharedPreferences.getInstance();
+        userId = prefs.getString('user_id') ?? '1'; // 默认使用用户ID=1，与profile接口一致
+      }
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/search/history/1'), // 临时使用用户ID=1
+        Uri.parse('$baseUrl/search/history/$userId'),
         headers: _getHeaders(),
       );
       
@@ -236,6 +250,67 @@ class ApiService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  // 删除搜索历史
+  static Future<bool> deleteSearchHistory(int historyId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/search/history/$historyId'),
+        headers: _getHeaders(),
+      );
+      
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['code'] == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 清空用户所有搜索历史
+  static Future<bool> clearAllSearchHistory({String? userId}) async {
+    try {
+      // 如果没有传入userId，尝试从本地存储获取
+      if (userId == null) {
+        final prefs = await SharedPreferences.getInstance();
+        userId = prefs.getString('user_id') ?? '1'; // 默认使用用户ID=1，与profile接口一致
+      }
+      
+      final response = await http.delete(
+        Uri.parse('$baseUrl/search/history/clear/$userId'),
+        headers: _getHeaders(),
+      );
+      
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['code'] == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 获取用户真实排名
+  static Future<Map<String, dynamic>> getUserRanking({String? userId}) async {
+    try {
+      // 如果没有传入userId，尝试从本地存储获取
+      if (userId == null) {
+        final prefs = await SharedPreferences.getInstance();
+        userId = prefs.getString('user_id') ?? '1'; // 默认使用用户ID=1，与profile接口一致
+      }
+      
+      final response = await http.get(
+        Uri.parse('$baseUrl/rank/user/$userId'),
+        headers: _getHeaders(),
+      );
+      
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['code'] == 200) {
+        return {'success': true, 'data': data['data']};
+      } else {
+        return {'success': false, 'error': data['detail'] ?? '获取排名失败'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -490,9 +565,12 @@ class ApiService {
   // 获取用户档案
   Future<Map<String, dynamic>> getUserProfile() async {
     try {
-      // 需要用户ID，暂时使用用户ID=1
+      // 获取当前登录用户的ID
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '1';
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/profile/1'), // 临时使用用户ID=1
+        Uri.parse('$baseUrl/profile/$userId'),
         headers: _getHeaders(),
       );
       
@@ -501,6 +579,30 @@ class ApiService {
         return {'success': true, 'data': data['data']};
       } else {
         return {'success': false, 'error': '获取用户档案失败'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // 获取文章推荐
+  Future<Map<String, dynamic>> getRecommendArticles({int? categoryId, int count = 6}) async {
+    try {
+      String url = '$baseUrl/article/recommend?count=$count';
+      if (categoryId != null) {
+        url += '&category_id=$categoryId';
+      }
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _getHeaders(),
+      );
+      
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['code'] == 200) {
+        return {'success': true, 'data': data['data']};
+      } else {
+        return {'success': false, 'error': data['msg'] ?? '获取推荐文章失败'};
       }
     } catch (e) {
       return {'success': false, 'error': e.toString()};
@@ -527,14 +629,32 @@ class ApiService {
   }
 
   // 添加投放记录
-  Future<Map<String, dynamic>> addDisposalRecord(int categoryId, String itemName, {double? confidence, String? imageUrl}) async {
+  static Future<Map<String, dynamic>> addDisposalRecord(
+    String garbageName, 
+    int categoryId, {
+    String? userId,
+    double? weight = 0.0,
+    String? locationName = "APP投放",
+    bool isCorrect = true,
+  }) async {
     try {
+      // 如果没有传入userId，尝试从本地存储获取
+      if (userId == null) {
+        final prefs = await SharedPreferences.getInstance();
+        userId = prefs.getString('user_id') ?? '1'; // 默认使用用户ID=1，与profile接口一致
+      }
+      
       final body = {
+        'user_id': int.tryParse(userId) ?? 1,
         'category_id': categoryId,
-        'item_name': itemName,
+        'weight': weight,
+        'location_name': locationName,
+        'is_correct': isCorrect,
       };
-      if (confidence != null) body['confidence'] = confidence;
-      if (imageUrl != null) body['image_url'] = imageUrl;
+      
+      print('=== 投放记录API调试 ===');
+      print('请求URL: $baseUrl/record/add');
+      print('请求体: $body');
       
       final response = await http.post(
         Uri.parse('$baseUrl/record/add'),
@@ -542,13 +662,17 @@ class ApiService {
         body: jsonEncode(body),
       );
       
+      print('响应状态码: ${response.statusCode}');
+      print('响应体: ${response.body}');
+      
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['code'] == 200) {
-        return {'success': true, 'data': data['data']};
+        return {'success': true, 'data': data, 'point': data['point'] ?? 0};
       } else {
         return {'success': false, 'error': data['msg'] ?? '添加失败'};
       }
     } catch (e) {
+      print('投放记录异常: $e');
       return {'success': false, 'error': e.toString()};
     }
   }

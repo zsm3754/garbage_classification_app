@@ -60,6 +60,16 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // 加载真实排名
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      authProvider.loadRealRanking();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -88,67 +98,12 @@ class _HomePageState extends State<HomePage> {
         child: SingleChildScrollView(
           child: Column(
           children: [
-            // 轮播图
-            Container(
-              height: 200,
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFAED581), Color(0xFF81C784)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Text(
-                      "垃圾分类小贴士",
-                      style: TextStyle(
-                        fontSize: 24,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        "向左滑动",
-                        style: TextStyle(color: Colors.green, fontSize: 12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             // 搜索区域
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "快速识别垃圾",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -727,7 +682,7 @@ class _SearchPageState extends State<SearchPage> {
           searchResults = result['data'] as List;
         });
         
-        // 添加搜索历史
+        // Only add search history when user explicitly submits search
         await apiService.addSearchHistory(query);
         await _loadSearchHistory();
       } else {
@@ -745,10 +700,42 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _deleteHistoryItem(int index) async {
-    // 这里可以调用删除历史记录的API
-    setState(() {
-      searchHistory.removeAt(index);
-    });
+    final item = searchHistory[index];
+    final historyId = item['history_id'] ?? item['id'];
+    
+    print('删除搜索历史 - historyId: $historyId, item: $item');
+    
+    if (historyId == null) {
+      print('无法获取history_id，跳过删除');
+      setState(() {
+        searchHistory.removeAt(index);
+      });
+      return;
+    }
+    
+    try {
+      // 调用删除API
+      final success = await ApiService.deleteSearchHistory(historyId as int);
+      
+      if (success) {
+        print('删除成功，重新加载搜索历史');
+        setState(() {
+          searchHistory.removeAt(index);
+        });
+        // 重新加载搜索历史以确保同步
+        await _loadSearchHistory();
+      } else {
+        print('删除失败');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('删除失败')),
+        );
+      }
+    } catch (e) {
+      print('删除异常: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('删除错误: $e')),
+      );
+    }
   }
 
   Color _getCategoryColor(String category) {
@@ -799,7 +786,14 @@ class _SearchPageState extends State<SearchPage> {
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    onChanged: _search,
+                    onChanged: (value) {
+  if (value.isEmpty) {
+    setState(() {
+      searchResults = [];
+    });
+  }
+},
+                    onSubmitted: _search,
                     decoration: InputDecoration(
                       hintText: "搜索垃圾分类...",
                       prefixIcon: const Icon(Icons.search),
@@ -1030,7 +1024,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       _buildStatCard("投放次数", "${authProvider.userProfile?['disposal_count'] ?? 0}", Colors.blue),
                       _buildStatCard("积分", "${authProvider.userPoints}", Colors.orange),
-                      _buildStatCard("排名", "${authProvider.rankScore}", Colors.purple),
+                      _buildStatCard("排名", authProvider.rankingText, Colors.purple),
                     ],
                   ),
                 ),

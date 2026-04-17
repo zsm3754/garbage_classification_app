@@ -24,11 +24,27 @@ class _SearchPageCompleteState extends State<SearchPageComplete> {
     super.dispose();
   }
 
+  Future<void> _performRealTimeSearch(String query) async {
+    if (query.trim().isEmpty) return;
+    
+    // Only call search API, don't save history
+    await context.read<SearchProvider>().search(query);
+    
+    setState(() {
+      _showHistory = false;
+    });
+  }
+
   Future<void> _search(String query) async {
-    if (query.isEmpty) return;
+    if (query.trim().isEmpty) return;
     
     final userId = context.read<UserProvider>().userId;
-    await context.read<SearchProvider>().search(userId, query);
+    
+    // Call search API first
+    await context.read<SearchProvider>().search(query);
+    
+    // Then save history only when user explicitly submits
+    await context.read<SearchProvider>().saveSearchHistory(userId, query);
     
     setState(() {
       _showHistory = false;
@@ -462,6 +478,9 @@ class _SearchPageCompleteState extends State<SearchPageComplete> {
                   onChanged: (value) {
                     if (value.isEmpty) {
                       setState(() => _showHistory = true);
+                    } else {
+                      // Real-time search without saving history
+                      _performRealTimeSearch(value);
                     }
                   },
                   decoration: InputDecoration(
