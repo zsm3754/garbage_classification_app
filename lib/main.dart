@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/home/home_page.dart';
 import 'providers/auth_provider.dart';
+import 'providers/providers.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(create: (context) => AppState()),
       ],
       child: const GarbageApp(),

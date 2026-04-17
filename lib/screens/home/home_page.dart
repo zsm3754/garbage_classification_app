@@ -1022,7 +1022,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatCard("投放次数", "${authProvider.userProfile?['disposal_count'] ?? 0}", Colors.blue),
+                      _buildStatCard("投放次数", "${authProvider.disposalCount}", Colors.blue),
                       _buildStatCard("积分", "${authProvider.userPoints}", Colors.orange),
                       _buildStatCard("排名", authProvider.rankingText, Colors.purple),
                     ],
@@ -1040,14 +1040,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 12),
-                      _buildMenuTile("我的成就", Icons.star),
                       _buildMenuTile("我的收藏", Icons.favorite, Colors.green, () {
   Navigator.push(
     context,
     MaterialPageRoute(builder: (context) => const FavoritesPage()),
   );
 }),
-                      _buildMenuTile("投放地点", Icons.location_on),
                       _buildMenuTile("设置", Icons.settings),
                       _buildMenuTile("关于我们", Icons.info),
                       _buildMenuTile("退出登录", Icons.logout, Colors.red, () => _handleLogout()),

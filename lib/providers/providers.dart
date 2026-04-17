@@ -42,11 +42,13 @@ class UserProvider extends ChangeNotifier {
         _username = username;
         _token = backendData['user_id']?.toString(); // Using user_id as token for now
         _isLoggedIn = true;
+        debugPrint('用户登录成功 - ID: $_userId, 用户名: $_username');
         notifyListeners();
         return true;
       }
       return false;
     } catch (e) {
+      debugPrint('登录失败: $e');
       return false;
     }
   }
@@ -55,7 +57,12 @@ class UserProvider extends ChangeNotifier {
     try {
       if (_userId != null) {
         final response = await _apiService.getUserProfile();
-        _statistics = response;
+        if (response['success'] == true) {
+          _statistics = response['data'];
+          debugPrint('统计数据加载成功: $_statistics');
+        } else {
+          debugPrint('统计数据加载失败: ${response['error']}');
+        }
         notifyListeners();
       }
     } catch (e) {

@@ -612,18 +612,25 @@ class ApiService {
   // 获取投放记录
   Future<List<dynamic>> getDisposalRecords() async {
     try {
-      // 需要用户ID，暂时使用用户ID=1
+      // 获取当前登录用户的ID
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '1';
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/record/list/1'), // 临时使用用户ID=1
+        Uri.parse('$baseUrl/record/list/$userId'),
         headers: _getHeaders(),
       );
       
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['code'] == 200) {
+        debugPrint('投放记录获取成功: ${data['data']}');
         return data['data'] ?? [];
+      } else {
+        debugPrint('投放记录获取失败: ${data['msg']}');
+        return [];
       }
-      return [];
     } catch (e) {
+      debugPrint('投放记录获取异常: $e');
       return [];
     }
   }
@@ -647,8 +654,7 @@ class ApiService {
       final body = {
         'user_id': int.tryParse(userId) ?? 1,
         'category_id': categoryId,
-        'weight': weight,
-        'location_name': locationName,
+        'garbage_name': garbageName,
         'is_correct': isCorrect,
       };
       

@@ -276,18 +276,30 @@ class AuthProvider with ChangeNotifier {
 
   // 获取投放次数
   int get disposalCount {
-    if (_userProfile != null && _userProfile!['disposal_count'] != null) {
-      return int.tryParse(_userProfile!['disposal_count'].toString()) ?? 0;
+    // 由于后端没有disposal_count字段，我们需要缓存实际投放次数
+    return _cachedDisposalCount;
+  }
+
+  // 缓存的投放次数
+  int _cachedDisposalCount = 0;
+
+  // 获取实际投放次数（通过计算投放记录）
+  Future<int> getActualDisposalCount() async {
+    try {
+      final apiService = ApiService();
+      final records = await apiService.getDisposalRecords();
+      return records.length;
+    } catch (e) {
+      debugPrint('获取实际投放次数失败: $e');
+      return 0;
     }
-    return 0;
   }
 
   // 获取用户等级
   int get userLevel {
-    if (_userProfile != null && _userProfile!['level'] != null) {
-      return int.tryParse(_userProfile!['level'].toString()) ?? 1;
-    }
-    return 1;
+    // 根据积分计算等级：每30分升一级
+    final points = userPoints;
+    return (points ~/ 30) + 1; // 0-29分=1级，30-59分=2级，以此类推
   }
 
   // 获取排名分数
@@ -370,9 +382,16 @@ class AuthProvider with ChangeNotifier {
   Future<void> refreshUserData() async {
     print('=== 刷新用户数据开始 ===');
     try {
-      // 重新加载用户资料以获取最新的积分和投放次数
+      // 重新加载用户资料以获取最新的积分
       await refreshUserProfile();
       print('用户资料刷新完成: $_userProfile');
+      
+      // 获取实际投放次数并缓存
+      final actualCount = await getActualDisposalCount();
+      print('实际投放次数: $actualCount');
+      _cachedDisposalCount = actualCount;
+      
+      notifyListeners();
       
       // 同时刷新排名
       await loadRealRanking();

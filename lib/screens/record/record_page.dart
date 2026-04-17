@@ -38,6 +38,7 @@ class _RecordPageState extends State<RecordPage> {
     try {
       final apiService = ApiService();
       final records = await apiService.getDisposalRecords();
+      print('获取到的投放记录数据: $records');
       setState(() {
         _disposalRecords = records;
         _isLoadingRecords = false;
@@ -131,10 +132,18 @@ class _RecordPageState extends State<RecordPage> {
         ],
       ),
       // 添加投放记录的浮动按钮
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddDisposalDialog,
         backgroundColor: Colors.green,
-        child: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(Icons.delete_outline, color: Colors.white),
+        label: const Text(
+          "投放垃圾",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -143,9 +152,11 @@ class _RecordPageState extends State<RecordPage> {
     showDialog(
       context: context,
       builder: (context) => AddDisposalDialog(
-        onDisposalAdded: () {
+        onDisposalAdded: () async {
           // 投放成功后刷新页面
           setState(() {});
+          // 立即刷新投放记录
+          await _loadDisposalRecords();
         },
         onRefreshRecords: _loadDisposalRecords, // 传递刷新记录的方法
       ),
@@ -325,12 +336,17 @@ class _RecordPageState extends State<RecordPage> {
       itemCount: _disposalRecords.length,
       itemBuilder: (context, index) {
         final record = _disposalRecords[index];
+        print('处理投放记录: $record');
         
-        // 获取分类信息
-        String categoryName = record['category_name'] ?? '未知分类';
+        // 根据API返回的实际字段名解析数据
+        int categoryId = record['category_id'] ?? 1;
+        String categoryName = _getCategoryNameById(categoryId);
         String garbageName = record['garbage_name'] ?? '未知垃圾';
-        bool isCorrect = record['is_correct'] ?? true;
-        String createdAt = record['created_at'] ?? '';
+        bool isCorrect = true; // API没有返回这个字段，默认为正确
+        String timestamp = record['timestamp'] ?? '';
+        String createdAt = _formatTimestamp(timestamp);
+        
+        print('解析后 - 垃圾名: $garbageName, 分类: $categoryName, 正确: $isCorrect, 时间: $createdAt');
         
         // 根据分类设置颜色
         Color categoryColor = _getCategoryColor(categoryName);
@@ -428,6 +444,45 @@ class _RecordPageState extends State<RecordPage> {
       return '${dateTime.month}-${dateTime.day} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateString;
+    }
+  }
+
+  // 根据分类ID获取分类名称
+  String _getCategoryNameById(int categoryId) {
+    switch (categoryId) {
+      case 1:
+        return '可回收物';
+      case 2:
+        return '有害垃圾';
+      case 3:
+        return '厨余垃圾';
+      case 4:
+        return '其他垃圾';
+      default:
+        return '未知分类';
+    }
+  }
+
+  // 格式化时间戳
+  String _formatTimestamp(String timestamp) {
+    if (timestamp.isEmpty) return '刚刚';
+    
+    try {
+      final dateTime = DateTime.parse(timestamp);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+      
+      if (difference.inMinutes < 1) {
+        return '刚刚';
+      } else if (difference.inHours < 1) {
+        return '${difference.inMinutes}分钟前';
+      } else if (difference.inDays < 1) {
+        return '${difference.inHours}小时前';
+      } else {
+        return '${dateTime.month}-${dateTime.day} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      }
+    } catch (e) {
+      return timestamp;
     }
   }
 
