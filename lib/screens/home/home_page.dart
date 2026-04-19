@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../record/record_page.dart';
 import '../detail/garbage_detail_page.dart';
 import '../detail/category_detail_page.dart';
+import '../knowledge/article_recommend_page.dart';
 import '../quiz/simple_quiz_page.dart';
 import '../camera/camera_recognition_page.dart';
 import '../favorites/favorites_page.dart';
@@ -677,15 +678,14 @@ class KnowledgePage extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 6,
+        itemCount: 5,
         itemBuilder: (context, index) {
           final categories = [
-            {"title": "有害垃圾", "color": Colors.red, "desc": "包含电池、灯泡等危害环境的物品"},
-            {"title": "可回收物", "color": Colors.blue, "desc": "包含纸张、塑料、玻璃、金属等"},
-            {"title": "湿垃圾", "color": Colors.orange, "desc": "包含果皮、食物残渣等易腐烂物品"},
-            {"title": "干垃圾", "color": Colors.grey, "desc": "不属于前三类的其他垃圾"},
-            {"title": "分类小贴士", "color": Colors.green, "desc": "学习更多垃圾分类的知识"},
-            {"title": "环保常识", "color": Colors.purple, "desc": "了解更多环保相关知识"},
+            {"title": "可回收物", "color": Colors.blue, "desc": "包含纸张、塑料、玻璃、金属等可回收材料"},
+            {"title": "厨余垃圾", "color": Colors.orange, "desc": "包含果皮、食物残渣等易腐物品"},
+            {"title": "其他垃圾", "color": Colors.grey, "desc": "不属于前三类的其他垃圾"},
+            {"title": "有害垃圾", "color": Colors.red, "desc": "包含电池、灯泡等对环境有害的物品"},
+            {"title": "垃圾小贴士", "color": Colors.green, "desc": "了解更多垃圾分类知识"},
           ];
           
           final category = categories[index];
@@ -711,13 +711,25 @@ class KnowledgePage extends StatelessWidget {
               subtitle: Text(category['desc'] as String),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
-                // 跳转到对应的分类详情页面
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CategoryDetailPage(categoryName: category['title'] as String),
-                  ),
-                );
+                final title = category['title'] as String;
+                
+                // 如果是垃圾小贴士，跳转到文章推荐页面
+                if (title == '垃圾小贴士') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ArticleRecommendPage(),
+                    ),
+                  );
+                } else {
+                  // 其他分类跳转到知识详情页面
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryDetailPage(categoryName: title),
+                    ),
+                  );
+                }
               },
             ),
           );
