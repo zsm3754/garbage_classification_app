@@ -1097,7 +1097,20 @@ class _ProfilePageState extends State<ProfilePage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(35),
                         ),
-                        child: const Icon(Icons.person, size: 40, color: Colors.green),
+                        child: authProvider.avatarUrl != null && authProvider.avatarUrl!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(35),
+                              child: Image.network(
+                                'http://192.168.43.23:8000${authProvider.avatarUrl}',
+                                width: 70,
+                                height: 70,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(Icons.person, size: 40, color: Colors.green);
+                                },
+                              ),
+                            )
+                          : const Icon(Icons.person, size: 40, color: Colors.green),
                       ),
                       const SizedBox(width: 20),
                       Expanded(

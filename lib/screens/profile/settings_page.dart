@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../main.dart';
 import '../auth/login_page.dart';
@@ -206,9 +207,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _uploadImage(XFile image, String password) async {
     try {
+      // Get current logged-in user ID
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId ?? 1;
+      
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.43.23:8000/api/user/upload/avatar'),
+        Uri.parse('http://192.168.43.23:8000/api/user/upload/avatar?user_id=$userId&password=$password'),
       );
       
       request.files.add(await http.MultipartFile.fromPath(
@@ -216,27 +221,34 @@ class _SettingsPageState extends State<SettingsPage> {
         image.path,
       ));
       
-      // 获取当前登录用户的ID
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userId = authProvider.userId ?? 1;
-      
-      request.fields['user_id'] = userId.toString();
-      request.fields['password'] = password;
-      
       final response = await request.send();
       
+      final responseBody = await response.stream.bytesToString();
+      
       if (response.statusCode == 200) {
+        // Parse response to get avatar URL
+        final responseData = json.decode(responseBody);
+        final avatarUrl = responseData['avatar_url'];
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("头像上传成功")),
+          const SnackBar(content: Text("Avatar uploaded successfully")),
         );
+        
+        // Directly update avatar URL in user profile
+        if (avatarUrl != null) {
+          authProvider.updateAvatarUrl(avatarUrl);
+        }
+        
+        // Don't call refreshUserInfo as it will override the avatar URL
+        // The avatar is already updated via updateAvatarUrl
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("头像上传失败")),
+          SnackBar(content: Text("Avatar upload failed: ${response.statusCode}")),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("上传错误")),
+        SnackBar(content: Text("Upload error: $e")),
       );
     }
   }

@@ -18,6 +18,7 @@ class AuthProvider with ChangeNotifier {
   String get token => _token;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get avatarUrl => _userProfile?['avatar_url'];
 
   AuthProvider() {
     _loadAuthState();
@@ -236,7 +237,6 @@ class AuthProvider with ChangeNotifier {
           _userProfile = response['data'];
         }
       } catch (e) {
-        if (kDebugMode) print('刷新用户档案失败: $e');
       }
       notifyListeners();
     }
@@ -401,6 +401,15 @@ class AuthProvider with ChangeNotifier {
   // 清除错误信息
   void clearError() {
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  // Update avatar URL directly
+  void updateAvatarUrl(String avatarUrl) {
+    if (_userProfile == null) {
+      _userProfile = {};
+    }
+    _userProfile!['avatar_url'] = avatarUrl;
     notifyListeners();
   }
 }
