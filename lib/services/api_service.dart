@@ -105,14 +105,6 @@ class ApiService {
       
       final data = jsonDecode(response.body);
       
-      // 添加调试信息
-      if (kDebugMode) {
-        print('=== 获取题目API调试 ===');
-        print('请求URL: $baseUrl/quiz/today');
-        print('响应状态码: ${response.statusCode}');
-        print('响应数据: $data');
-        print('==================');
-      }
       
       if (response.statusCode == 200 && data['code'] == 200) {
         return {'success': true, 'data': data['data']};
@@ -120,7 +112,6 @@ class ApiService {
         return {'success': false, 'error': data['msg'] ?? '获取题目失败'};
       }
     } catch (e) {
-      if (kDebugMode) print('获取题目异常: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -156,18 +147,6 @@ class ApiService {
       
       final data = jsonDecode(response.body);
       
-      // 添加调试信息
-      if (kDebugMode) {
-        print('=== 提交答案API调试 ===');
-        print('请求URL: $baseUrl/quiz/submit');
-        print('quizId类型: ${quizId.runtimeType}');
-        print('answer类型: ${answer.runtimeType}');
-        print('userId: $userId');
-        print('请求体: $requestBody');
-        print('响应状态码: ${response.statusCode}');
-        print('响应数据: $data');
-        print('==================');
-      }
       
       if (response.statusCode == 200 && data['code'] == 200) {
         return {'success': true, 'data': data['data']};
@@ -184,7 +163,6 @@ class ApiService {
         return {'success': false, 'error': errorMessage};
       }
     } catch (e) {
-      if (kDebugMode) print('提交答案异常: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -338,28 +316,16 @@ class ApiService {
           final request = http.MultipartRequest('POST', Uri.parse(url));
           request.headers.addAll(_getHeaders());
           
-          if (kDebugMode) {
-            print('=== 请求详情: $url ===');
-            print('文件路径: ${imageFile.path}');
-            print('文件大小: ${await imageFile.length()} bytes');
-            print('请求头: ${request.headers}');
-          }
           
           // 尝试不同的参数名
           if (url.contains('garbage/recognize')) {
             // 原始API期望'file'参数
             request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-            if (kDebugMode) print('使用参数名: file');
           } else {
             // 其他API尝试'image'参数
             request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
-            if (kDebugMode) print('使用参数名: image');
           }
           
-          if (kDebugMode) {
-            print('请求字段: ${request.fields}');
-            print('文件字段: ${request.files.map((f) => f.field).toList()}');
-          }
           
           final streamedResponse = await request.send();
           final response = await http.Response.fromStream(streamedResponse);
@@ -368,18 +334,12 @@ class ApiService {
           statusCode = response.statusCode;
           successUrl = url;
           
-          if (kDebugMode) {
-            print('=== 尝试API路径: $url ===');
-            print('响应状态码: $statusCode');
-            print('响应体: ${response.body}');
-          }
           
           // 只有状态码为200时才尝试解析JSON
           if (response.statusCode == 200) {
             try {
               data = jsonDecode(response.body);
             } catch (e) {
-              if (kDebugMode) print('JSON解析失败: $e');
               continue; // 尝试下一个URL
             }
             break; // 找到可用的API
@@ -388,23 +348,14 @@ class ApiService {
             try {
               data = jsonDecode(response.body);
             } catch (e) {
-              if (kDebugMode) print('错误响应JSON解析失败: $e');
               data = {'detail': response.body}; // 使用原始响应作为错误信息
             }
           }
         } catch (e) {
-          if (kDebugMode) print('API路径 $url 失败: $e');
           continue; // 尝试下一个URL
         }
       }
       
-      if (kDebugMode) {
-        print('=== 拍照识别API调试 ===');
-        print('成功URL: $successUrl');
-        print('响应状态码: $statusCode');
-        print('原始响应数据: $data');
-        print('==================');
-      }
       
       if (statusCode == 200 && data != null) {
         // 处理后端返回的预测结果
@@ -470,7 +421,6 @@ class ApiService {
         return {'success': false, 'error': '识别失败'};
       }
     } catch (e) {
-      if (kDebugMode) print('识别异常: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -546,14 +496,6 @@ class ApiService {
         }
       }
       
-      if (kDebugMode) {
-        print('=== 获取分类详情API调试 ===');
-        print('分类名称: $categoryName');
-        print('成功URL: $successUrl');
-        print('响应状态码: $statusCode');
-        print('响应数据: $data');
-        print('==================');
-      }
       
       if (statusCode == 200 && data != null && data['code'] == 200) {
         return {'success': true, 'data': data['data']};
@@ -561,7 +503,6 @@ class ApiService {
         return {'success': false, 'error': data?['msg'] ?? '获取分类详情失败'};
       }
     } catch (e) {
-      if (kDebugMode) print('获取分类详情异常: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -627,14 +568,11 @@ class ApiService {
       
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['code'] == 200) {
-        debugPrint('投放记录获取成功: ${data['data']}');
         return data['data'] ?? [];
       } else {
-        debugPrint('投放记录获取失败: ${data['msg']}');
         return [];
       }
     } catch (e) {
-      debugPrint('投放记录获取异常: $e');
       return [];
     }
   }
@@ -662,9 +600,6 @@ class ApiService {
         'is_correct': isCorrect,
       };
       
-      print('=== 投放记录API调试 ===');
-      print('请求URL: $baseUrl/record/add');
-      print('请求体: $body');
       
       final response = await http.post(
         Uri.parse('$baseUrl/record/add'),
@@ -672,8 +607,6 @@ class ApiService {
         body: jsonEncode(body),
       );
       
-      print('响应状态码: ${response.statusCode}');
-      print('响应体: ${response.body}');
       
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['code'] == 200) {
@@ -682,7 +615,6 @@ class ApiService {
         return {'success': false, 'error': data['msg'] ?? '添加失败'};
       }
     } catch (e) {
-      print('投放记录异常: $e');
       return {'success': false, 'error': e.toString()};
     }
   }

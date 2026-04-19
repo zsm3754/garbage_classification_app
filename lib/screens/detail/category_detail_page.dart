@@ -66,20 +66,17 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
   };
 
   Map<String, dynamic>? get _categoryDetail {
-    // 尝试多种可能的名称匹配
-    final names = [widget.categoryName];
-    
-    // 添加一些常见的别名
-    if (widget.categoryName == '厨余垃圾') {
-      names.add('湿垃圾');
-    } else if (widget.categoryName == '湿垃圾') {
-      names.add('厨余垃圾');
+    // 直接匹配
+    if (_categoryData.containsKey(widget.categoryName)) {
+      return _categoryData[widget.categoryName];
     }
     
-    for (String name in names) {
-      if (_categoryData.containsKey(name)) {
-        return _categoryData[name];
-      }
+    // 尝试匹配别名
+    if (widget.categoryName == '厨余垃圾' && _categoryData.containsKey('湿垃圾')) {
+      return _categoryData['湿垃圾'];
+    }
+    if (widget.categoryName == '湿垃圾' && _categoryData.containsKey('厨余垃圾')) {
+      return _categoryData['厨余垃圾'];
     }
     
     return null;

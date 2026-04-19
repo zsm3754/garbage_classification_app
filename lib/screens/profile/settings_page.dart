@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import '../../main.dart';
-import '../../providers/providers.dart';
 import '../auth/login_page.dart';
 import '../../providers/auth_provider.dart';
 

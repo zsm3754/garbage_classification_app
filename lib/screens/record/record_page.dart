@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/providers.dart';
 import '../../services/api_service.dart';
 
 class RecordPage extends StatefulWidget {
@@ -38,13 +37,11 @@ class _RecordPageState extends State<RecordPage> {
     try {
       final apiService = ApiService();
       final records = await apiService.getDisposalRecords();
-      print('获取到的投放记录数据: $records');
       setState(() {
         _disposalRecords = records;
         _isLoadingRecords = false;
       });
     } catch (e) {
-      print('加载投放记录失败: $e');
       setState(() {
         _isLoadingRecords = false;
       });
@@ -363,7 +360,6 @@ class _RecordPageState extends State<RecordPage> {
       itemCount: _disposalRecords.length,
       itemBuilder: (context, index) {
         final record = _disposalRecords[index];
-        print('处理投放记录: $record');
         
         // 根据API返回的实际字段名解析数据
         int categoryId = record['category_id'] ?? 1;
@@ -373,7 +369,6 @@ class _RecordPageState extends State<RecordPage> {
         String timestamp = record['timestamp'] ?? '';
         String createdAt = _formatTimestamp(timestamp);
         
-        print('解析后 - 垃圾名: $garbageName, 分类: $categoryName, 正确: $isCorrect, 时间: $createdAt');
         
         // 根据分类设置颜色
         Color categoryColor = _getCategoryColor(categoryName);
@@ -623,10 +618,7 @@ class _AddDisposalDialogState extends State<AddDisposalDialog> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await authProvider.refreshUserData();
         
-        // 刷新UserProvider的统计数据（用于个人资料页面显示）
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.refreshStatistics();
-        
+                
         // 强制刷新UI
         if (mounted) {
           setState(() {});
@@ -640,7 +632,6 @@ class _AddDisposalDialogState extends State<AddDisposalDialog> {
         );
       }
     } catch (e) {
-      print('投放异常: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('投放错误：$e'),

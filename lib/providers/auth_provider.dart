@@ -50,9 +50,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final actualCount = await getActualDisposalCount();
       _cachedDisposalCount = actualCount;
-      if (kDebugMode) print('投放次数加载完成: $actualCount');
     } catch (e) {
-      if (kDebugMode) print('加载投放次数失败: $e');
     }
   }
 
@@ -141,13 +139,9 @@ class AuthProvider with ChangeNotifier {
       
       if (response['success']) {
         final data = response['data'];
-        print('=== AuthProvider Login Debug ===');
-        print('API Response: $response');
-        print('Data: $data');
         
         // Handle backend response format: data['data'] contains the actual response
         final backendData = data['data'] ?? data;
-        print('Backend Data: $backendData');
         
         // Use user_id as token for now (since backend doesn't return a separate token)
         _token = backendData['user_id']?.toString() ?? "";
@@ -158,8 +152,6 @@ class AuthProvider with ChangeNotifier {
         }
         _isAuthenticated = true;
         
-        print('User Info: $_userInfo');
-        print('Token: $_token');
         
         if (_token.isNotEmpty) {
           ApiService.setAuthToken(_token);
@@ -358,67 +350,52 @@ class AuthProvider with ChangeNotifier {
 
     try {
       if (userId == null) {
-        print('=== User not logged in, cannot load ranking ===');
-        _realRanking = 999;
+          _realRanking = 999;
         return;
       }
       
       final currentUserId = userId.toString();
-      print('=== start loading ranking, user ID: $currentUserId ===');
       
       final response = await ApiService.getUserRanking(userId: currentUserId);
-      print('Ranking API response: $response');
       
       if (response['success'] == true) {
         final data = response['data'];
-        print('排名数据: $data');
         
         // 根据你的接口格式获取排名
         _realRanking = data['rank'] ?? 999;
-        print('设置排名: $_realRanking');
         
         // 更新用户积分（如果后端返回了积分）
         if (data['total_points'] != null) {
           if (_userProfile == null) _userProfile = {};
           _userProfile!['total_points'] = data['total_points'];
-          print('更新用户积分: ${data['total_points']}');
         }
       } else {
-        print('排名API失败: ${response['error']}');
         _realRanking = 999; // 设置默认排名
       }
     } catch (e) {
-      print('加载排名异常: $e');
       _realRanking = 999;
     } finally {
       _isLoadingRanking = false;
-      print('排名加载完成，最终排名: $_realRanking');
       notifyListeners();
     }
   }
 
   // 刷新用户数据（包括积分和投放次数）
   Future<void> refreshUserData() async {
-    print('=== 刷新用户数据开始 ===');
     try {
       // 重新加载用户资料以获取最新的积分
       await refreshUserProfile();
-      print('用户资料刷新完成: $_userProfile');
       
       // 获取实际投放次数并缓存
       final actualCount = await getActualDisposalCount();
-      print('实际投放次数: $actualCount');
       _cachedDisposalCount = actualCount;
       
       notifyListeners();
       
       // 同时刷新排名
       await loadRealRanking();
-      print('排名刷新完成: $_realRanking');
     } catch (e) {
-      print('刷新用户数据失败: $e');
     }
-    print('=== 刷新用户数据完成 ===');
   }
 
   // 清除错误信息

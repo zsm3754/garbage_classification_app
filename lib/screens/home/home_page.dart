@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import '../record/record_page.dart';
-import '../detail/garbage_detail_page.dart';
 import '../detail/category_detail_page.dart';
 import '../knowledge/article_recommend_page.dart';
 import '../quiz/simple_quiz_page.dart';
@@ -259,10 +258,10 @@ class _HomePageState extends State<HomePage> {
                       crossAxisSpacing: 12,
                       childAspectRatio: 0.8,
                       children: [
-                        _buildImageCard(context, 'assets/card/环保科普卡片设计.png', '有害垃圾'),
-                        _buildImageCard(context, 'assets/card/环保科普卡片设计 (1).png', '可回收物'),
-                        _buildImageCard(context, 'assets/card/环保科普卡片设计 (2).png', '湿垃圾'),
-                        _buildImageCard(context, 'assets/card/环保科普卡片设计 (3).png', '干垃圾'),
+                        _buildImageCard(context, 'assets/card/环保科普卡片设计 (1).png', '厨余垃圾'),
+                        _buildImageCard(context, 'assets/card/环保科普卡片设计 (2).png', '其他垃圾'),
+                        _buildImageCard(context, 'assets/card/环保科普卡片设计 (3).png', '有害垃圾'),
+                        _buildImageCard(context, 'assets/card/环保科普卡片设计.png', '可回收物'),
                       ],
                     ),
                   ],
@@ -818,10 +817,7 @@ class _SearchPageState extends State<SearchPage> {
     final item = searchHistory[index];
     final historyId = item['history_id'] ?? item['id'];
     
-    print('删除搜索历史 - historyId: $historyId, item: $item');
-    
     if (historyId == null) {
-      print('无法获取history_id，跳过删除');
       setState(() {
         searchHistory.removeAt(index);
       });
@@ -833,14 +829,12 @@ class _SearchPageState extends State<SearchPage> {
       final success = await ApiService.deleteSearchHistory(historyId as int);
       
       if (success) {
-        print('删除成功，重新加载搜索历史');
         setState(() {
           searchHistory.removeAt(index);
         });
         // 重新加载搜索历史以确保同步
         await _loadSearchHistory();
       } else {
-        print('删除失败');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('删除失败')),
         );

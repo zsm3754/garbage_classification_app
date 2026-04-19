@@ -30,36 +30,17 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
       final apiService = ApiService();
       final result = await apiService.getTodayQuiz();
 
-      // 添加调试信息
-      print('=== 获取题目调试信息 ===');
-      print('API返回结果: $result');
-      print('result类型: ${result.runtimeType}');
       if (result['success'] && result['data'] != null) {
-        final data = result['data'];
-        print('data类型: ${data.runtimeType}');
-        print('data内容: $data');
-        print('题目ID: ${data['quiz_id']} (类型: ${data['quiz_id']?.runtimeType})');
-        print('题目内容: ${data['question']}');
-        print('所有字段: ${data.keys}');
-      } else {
-        print('获取失败: ${result['error']}');
-      }
-      print('========================');
-
-      if (result['success']) {
         final data = result['data'];
         
         // 检查data是否是数组（List）
         if (data is List && data.isNotEmpty) {
           // 如果是数组，取第一个题目
-          print('后端返回数组，取第一个题目: ${data[0]}');
           _todayQuiz = Map<String, dynamic>.from(data[0]);
         } else if (data is Map) {
           // 如果是对象，直接使用，需要类型转换
-          print('后端返回对象，直接使用: $data');
           _todayQuiz = Map<String, dynamic>.from(data);
         } else {
-          print('数据格式不正确: $data');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("题目数据格式错误")),
@@ -81,7 +62,6 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
         }
       }
     } catch (e) {
-      print('获取题目异常: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("加载失败: $e")),
@@ -98,19 +78,9 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 添加调试信息
-      print('=== 答题提交调试信息 ===');
-      print('题目数据: $_todayQuiz');
-      
-      // 安全地获取题目ID
       final quizIdValue = _todayQuiz!['quiz_id']; // 使用quiz_id字段
-      print('题目ID原始值: $quizIdValue (类型: ${quizIdValue.runtimeType})');
       
       final quizId = quizIdValue != null ? int.tryParse(quizIdValue.toString()) ?? 0 : 0;
-      
-      print('题目ID转换后: $quizId');
-      print('选择的答案: $_selectedAnswer');
-      print('========================');
 
       if (quizId == 0) {
         if (mounted) {
@@ -125,18 +95,9 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final userIdValue = authProvider.userId;
       
-      // 添加详细的调试信息
-      print('=== 登录状态调试 ===');
-      print('isAuthenticated: ${authProvider.isAuthenticated}');
-      print('userId: $userIdValue');
-      print('username: ${authProvider.username}');
-      print('userInfo: ${authProvider.userInfo}');
-      print('token: ${authProvider.token}');
-      print('==================');
       
       // 检查用户是否已登录 - 临时允许未登录用户测试
       if (userIdValue == null) {
-        print('用户未登录，但允许临时测试答题');
         // 临时注释登录检查
         /*
         if (mounted) {
@@ -149,12 +110,6 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
         */
       }
       
-      // 临时测试：直接模拟成功提交
-      print('=== 临时测试模式 ===');
-      print('题目ID: $quizId');
-      print('选择答案: $_selectedAnswer');
-      print('用户ID: $userIdValue');
-      print('==================');
       
       // 模拟正确答案检查
       final correctAnswer = _todayQuiz!['correct_answer'] ?? '';
@@ -191,7 +146,6 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
         userId: userIdValue.toString(),
       );
 
-      print('提交结果: $result');
 
       if (result['success']) {
         setState(() {
@@ -202,7 +156,6 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
         if (mounted) {
           // 显示详细的错误信息
           final errorMessage = result['error'] ?? '提交失败';
-          print('提交失败原因: $errorMessage');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("提交失败: $errorMessage")),
           );
@@ -210,7 +163,6 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
       }
       */
     } catch (e) {
-      print('提交异常: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("提交失败: $e")),

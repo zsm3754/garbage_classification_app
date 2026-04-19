@@ -292,8 +292,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
         
-        // 同步AppState状态，确保路由跳转
-        context.read<AppState>().login();
       }
     }
   }

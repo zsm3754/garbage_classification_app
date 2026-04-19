@@ -3,34 +3,14 @@ import 'package:provider/provider.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/home/home_page.dart';
 import 'providers/auth_provider.dart';
-import 'providers/providers.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => AuthProvider()),
-        ChangeNotifierProvider(create: (context) => UserProvider()),
-        ChangeNotifierProvider(create: (context) => AppState()),
-      ],
+    ChangeNotifierProvider(
+      create: (context) => AuthProvider(),
       child: const GarbageApp(),
     ),
   );
-}
-
-class AppState extends ChangeNotifier {
-  bool _isLoggedIn = false;
-  bool get isLoggedIn => _isLoggedIn;
-
-  void login() {
-    _isLoggedIn = true;
-    notifyListeners();
-  }
-
-  void logout() {
-    _isLoggedIn = false;
-    notifyListeners();
-  }
 }
 
 class GarbageApp extends StatelessWidget {
@@ -38,8 +18,8 @@ class GarbageApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AuthProvider, AppState>(
-      builder: (context, authProvider, appState, child) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
         return MaterialApp(
           title: '绿意分类',
           theme: ThemeData(
