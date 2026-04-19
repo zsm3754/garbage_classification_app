@@ -8,6 +8,7 @@ import '../knowledge/article_recommend_page.dart';
 import '../quiz/simple_quiz_page.dart';
 import '../camera/camera_recognition_page.dart';
 import '../favorites/favorites_page.dart';
+import '../profile/settings_page.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 
@@ -63,9 +64,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // 加载真实排名
+    // 加载用户数据（包括投放次数和排名）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      authProvider.refreshUserData();
       authProvider.loadRealRanking();
     });
   }
@@ -1159,8 +1161,15 @@ class _ProfilePageState extends State<ProfilePage> {
     MaterialPageRoute(builder: (context) => const FavoritesPage()),
   );
 }),
-                      _buildMenuTile("设置", Icons.settings),
-                      _buildMenuTile("关于我们", Icons.info),
+                      _buildMenuTile("设置", Icons.settings, Colors.blue, () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const SettingsPage()),
+  );
+}),
+                      _buildMenuTile("关于我们", Icons.info, Colors.green, () {
+  _showAboutDialog();
+}),
                       _buildMenuTile("退出登录", Icons.logout, Colors.red, () => _handleLogout()),
                     ],
                   ),
@@ -1241,23 +1250,109 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _handleLogout() async {
+  void _handleLogout() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('退出登录'),
-        content: const Text('确定要退出登录吗？'),
+        title: const Text("确认退出"),
+        content: const Text("确定要退出登录吗？"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: const Text("取消"),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              context.read<AuthProvider>().logout();
+              // TODO: 实现退出登录逻辑
             },
-            child: const Text('确定'),
+            child: const Text("退出"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("关于我们"),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "绿意分类 v1.0.0",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                " 应用简介",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "绿意分类是一款专注于垃圾分类知识普及的免费应用，"
+                "旨在帮助大家正确识别和分类各种垃圾，"
+                "共同参与环保行动，为保护地球环境贡献力量。",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 16),
+              Text(
+                " 核心功能",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "• AI智能识别垃圾类型\n"
+                "• 详细的垃圾分类指南\n"
+                "• 每日环保知识问答\n"
+                "• 个人环保数据统计\n"
+                "• 积分奖励系统",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 16),
+              Text(
+                " 我们的承诺",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "本应用完全免费使用，致力于推广垃圾分类知识，"
+                "让每个人都成为环保的参与者和贡献者。",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 16),
+              Text(
+                " 2026 绿意分类团队\n"
+                "为更美好的环境而努力",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("关闭"),
           ),
         ],
       ),

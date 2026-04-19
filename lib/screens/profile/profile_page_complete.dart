@@ -119,7 +119,7 @@ class _ProfilePageCompleteState extends State<ProfilePageComplete> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildStatCard(
-                        "${stats?['disposal_count'] ?? stats?['totalDisposals'] ?? 0}",
+                        "${authProvider.disposalCount}",
                         "投放次数",
                         Colors.blue,
                       ),
@@ -327,11 +327,76 @@ class _ProfilePageCompleteState extends State<ProfilePageComplete> {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text("关于我们"),
-                          content: const Text(
-                            "绿意分类 v1.0.0\n\n"
-                            "一个专业的垃圾分类应用，帮助用户正确分类垃圾，\n"
-                            "参与环保行动，为地球做贡献。\n\n"
-                            "© 2026 绿意分类",
+                          content: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "绿意分类 v1.0.0",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  "🌱 应用简介",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "绿意分类是一款专注于垃圾分类知识普及的免费应用，"
+                                  "旨在帮助大家正确识别和分类各种垃圾，"
+                                  "共同参与环保行动，为保护地球环境贡献力量。",
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  "🎯 核心功能",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "• AI智能识别垃圾类型\n"
+                                  "• 详细的垃圾分类指南\n"
+                                  "• 每日环保知识问答\n"
+                                  "• 个人环保数据统计\n"
+                                  "• 积分奖励系统",
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  "💚 我们的承诺",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "本应用完全免费使用，致力于推广垃圾分类知识，"
+                                  "让每个人都成为环保的参与者和贡献者。",
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  "© 2026 绿意分类团队\n"
+                                  "为更美好的环境而努力",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           actions: [
                             TextButton(

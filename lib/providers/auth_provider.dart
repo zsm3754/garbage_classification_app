@@ -35,11 +35,24 @@ class AuthProvider with ChangeNotifier {
         // Only set authenticated if user info was successfully loaded
         if (_userInfo != null) {
           _isAuthenticated = true;
+          // 加载实际的投放次数
+          await _loadDisposalCount();
         }
         notifyListeners();
       }
     } catch (e) {
       if (kDebugMode) print('加载认证状态失败: $e');
+    }
+  }
+
+  // 加载投放次数
+  Future<void> _loadDisposalCount() async {
+    try {
+      final actualCount = await getActualDisposalCount();
+      _cachedDisposalCount = actualCount;
+      if (kDebugMode) print('投放次数加载完成: $actualCount');
+    } catch (e) {
+      if (kDebugMode) print('加载投放次数失败: $e');
     }
   }
 
@@ -153,6 +166,8 @@ class AuthProvider with ChangeNotifier {
         }
         await _saveAuthState();
         await _fetchUserProfile();
+        // 加载实际的投放次数
+        await _loadDisposalCount();
         
         _setLoading(false);
         return true;

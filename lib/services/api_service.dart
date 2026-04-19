@@ -75,14 +75,18 @@ class ApiService {
   // 获取当前用户信息
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
+      // 获取当前登录用户的ID
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '1';
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/user/me'),
+        Uri.parse('$baseUrl/user/$userId'),
         headers: _getHeaders(),
       );
       
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200) {
-        return {'success': true, 'data': data};
+      if (response.statusCode == 200 && data['code'] == 200) {
+        return {'success': true, 'data': data['data']};
       } else {
         return {'success': false, 'error': '获取用户信息失败'};
       }
