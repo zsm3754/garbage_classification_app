@@ -30,6 +30,9 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _token = prefs.getString('auth_token') ?? "";
       
+      // Load avatar URL from local storage
+      final savedAvatarUrl = prefs.getString('avatar_url');
+      
       if (_token.isNotEmpty) {
         ApiService.setAuthToken(_token);
         await _fetchUserInfo();
@@ -39,6 +42,13 @@ class AuthProvider with ChangeNotifier {
           // 加载实际的投放次数
           await _loadDisposalCount();
         }
+        
+        // Restore avatar URL if it exists and user profile doesn't have one
+        if (savedAvatarUrl != null && _userProfile != null && _userProfile!['avatar_url'] == null) {
+          if (_userProfile == null) _userProfile = {};
+          _userProfile!['avatar_url'] = savedAvatarUrl;
+        }
+        
         notifyListeners();
       }
     } catch (e) {
@@ -123,7 +133,18 @@ class AuthProvider with ChangeNotifier {
     try {
       final response = await _apiService.getUserProfile();
       if (response['success']) {
+        // Save current avatar URL before updating
+        final currentAvatarUrl = _userProfile?['avatar_url'];
+        final savedAvatarUrl = await SharedPreferences.getInstance().then((prefs) => prefs.getString('avatar_url'));
+        
         _userProfile = response['data'];
+        
+        // Always use saved avatar URL if available, regardless of database value
+        if (savedAvatarUrl != null) {
+          _userProfile!['avatar_url'] = savedAvatarUrl;
+        } else if (currentAvatarUrl != null) {
+          _userProfile!['avatar_url'] = currentAvatarUrl;
+        }
       }
     } catch (e) {
       if (kDebugMode) print('获取用户档案失败: $e');
@@ -208,6 +229,15 @@ class AuthProvider with ChangeNotifier {
     _errorMessage = null;
     
     ApiService.clearAuthToken();
+    
+    // Clear saved avatar URL
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('avatar_url');
+    } catch (e) {
+      if (kDebugMode) print('Failed to clear avatar URL: $e');
+    }
+    
     await _saveAuthState(); // 这会清除本地存储的用户ID
     notifyListeners();
   }
@@ -232,9 +262,20 @@ class AuthProvider with ChangeNotifier {
   Future<void> refreshUserProfile() async {
     if (_isAuthenticated) {
       try {
+        // Save current avatar URL before updating
+        final currentAvatarUrl = _userProfile?['avatar_url'];
+        final savedAvatarUrl = await SharedPreferences.getInstance().then((prefs) => prefs.getString('avatar_url'));
+        
         final response = await _apiService.getUserProfile();
         if (response['success']) {
           _userProfile = response['data'];
+          
+          // Always use saved avatar URL if available, regardless of database value
+          if (savedAvatarUrl != null) {
+            _userProfile!['avatar_url'] = savedAvatarUrl;
+          } else if (currentAvatarUrl != null) {
+            _userProfile!['avatar_url'] = currentAvatarUrl;
+          }
         }
       } catch (e) {
       }
@@ -306,11 +347,12 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 获取用户等级
+  // 获取用户等级（从数据库获取，不再本地计算）
   int get userLevel {
-    // 根据积分计算等级：每30分升一级
-    final points = userPoints;
-    return (points ~/ 30) + 1; // 0-29分=1级，30-59分=2级，以此类推
+    if (_userProfile != null && _userProfile!['level'] != null) {
+      return int.tryParse(_userProfile!['level'].toString()) ?? 1;
+    }
+    return 1;
   }
 
   // 获取排名分数
@@ -405,11 +447,20 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Update avatar URL directly
-  void updateAvatarUrl(String avatarUrl) {
+  void updateAvatarUrl(String avatarUrl) async {
     if (_userProfile == null) {
       _userProfile = {};
     }
     _userProfile!['avatar_url'] = avatarUrl;
+    
+    // Save to SharedPreferences for persistence
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('avatar_url', avatarUrl);
+    } catch (e) {
+      if (kDebugMode) print('Failed to save avatar URL: $e');
+    }
+    
     notifyListeners();
   }
 }

@@ -168,73 +168,8 @@ class LocalDataService {
         .toList();
   }
 
-  // 检查并颁发成就
-  static Future<void> checkAndUnlockAchievements(String userId) async {
-    final records = await getAllDisposalRecords(userId);
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${_achievementsKey}_$userId';
-    final existingAchievements = prefs.getStringList(key) ?? [];
-    
-    final achievements = [
-      if (records.length >= 1)
-        Achievement(
-          id: 'first_disposal',
-          name: '环保启航者',
-          description: '完成第一次垃圾投放',
-          icon: '🚀',
-          unlockedDate: DateTime.now(),
-        ),
-      if (records.length >= 10)
-        Achievement(
-          id: 'ten_times',
-          name: '坚持者',
-          description: '完成10次垃圾投放',
-          icon: '✨',
-          unlockedDate: DateTime.now(),
-        ),
-      if (records.length >= 50)
-        Achievement(
-          id: 'fifty_times',
-          name: '环保卫士',
-          description: '完成50次垃圾投放',
-          icon: '🏆',
-          unlockedDate: DateTime.now(),
-        ),
-      if (records.fold(0.0, (sum, r) => sum + r.weight) >= 10)
-        Achievement(
-          id: 'ten_kg',
-          name: '减量先锋',
-          description: '投放垃圾总量达到10kg',
-          icon: '💚',
-          unlockedDate: DateTime.now(),
-        ),
-    ];
 
-    // 过滤新成就
-    final achievementIds =
-        existingAchievements.map((a) {
-          final json = jsonDecode(a) as Map<String, dynamic>;
-          return json['id'] as String;
-        }).toSet();
-
-    final newAchievements = achievements
-        .where((a) => !achievementIds.contains(a.id))
-        .toList();
-
-    for (final achievement in newAchievements) {
-      existingAchievements.add(jsonEncode({
-        'id': achievement.id,
-        'name': achievement.name,
-        'description': achievement.description,
-        'icon': achievement.icon,
-        'unlockedDate': achievement.unlockedDate.toIso8601String(),
-      }));
-    }
-
-    await prefs.setStringList(key, existingAchievements);
-  }
-
-  // 获取统计数据
+  // 获取统计数据（从数据库获取，不再本地计算）
   static Future<Map<String, dynamic>> getStatistics(String userId) async {
     final records = await getAllDisposalRecords(userId);
     
@@ -247,29 +182,11 @@ class LocalDataService {
           (categoryStats[record.categoryName] ?? 0) + 1;
     }
 
-    // 计算积分（每次投放10分 + 重量奖励）
-    int totalPoints = totalDisposals * 10 + (totalWeight * 5).toInt();
-
     return {
       'totalDisposals': totalDisposals,
       'totalWeight': totalWeight,
-      'totalPoints': totalPoints,
       'categoryStats': categoryStats,
-      'level': _calculateLevel(totalDisposals),
-      'rank': _calculateRank(totalPoints),
     };
   }
 
-  // 计算用户等级
-  static String _calculateLevel(int disposalCount) {
-    if (disposalCount < 5) return '初级环保卫士';
-    if (disposalCount < 20) return '中级环保卫士';
-    if (disposalCount < 50) return '高级环保卫士';
-    return '环保大使';
-  }
-
-  // 计算用户排名（模拟）
-  static String _calculateRank(int points) {
-    return '第 ${(points ~/ 100) + 1} 名';
-  }
 }

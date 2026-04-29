@@ -57,15 +57,11 @@ class _GarbageDetailPageState extends State<GarbageDetailPage> {
       });
 
       await context.read<UserProvider>().loadStatistics();
-      final checkedUserId = userId ?? '';
-      if (checkedUserId.isNotEmpty) {
-        await LocalDataService.checkAndUnlockAchievements(checkedUserId);
-      }
       await context.read<UserProvider>().loadAchievements();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("投放成功，获得10积分")),
+          const SnackBar(content: Text("投放成功")),
         );
         Navigator.pop(context);
       }
