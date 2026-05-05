@@ -63,7 +63,7 @@ class _ArticleRecommendPageState extends State<ArticleRecommendPage> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/beijing/recommend.jpg'),
+            image: AssetImage('assets/beijing/beijing1.jpg'),
             fit: BoxFit.cover,
           ),
         ),

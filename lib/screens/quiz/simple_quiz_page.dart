@@ -115,6 +115,7 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
       final correctAnswer = _todayQuiz!['correct_answer'] ?? '';
       final isCorrect = _selectedAnswer == correctAnswer;
       
+      // 先显示本地结果
       setState(() {
         _submitResult = {
           'correct': isCorrect,
@@ -125,8 +126,6 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
         _isAnswered = true;
       });
       
-      setState(() => _isLoading = false);
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -136,32 +135,43 @@ class _SimpleQuizPageState extends State<SimpleQuizPage> {
         );
       }
       
-      return; // 临时跳过API调用
-      
-      // 原来的API调用（暂时注释）
-      /*
-      final result = await apiService.submitQuizAnswer(
-        quizId,
-        _selectedAnswer!,
-        userId: userIdValue.toString(),
-      );
+      // 调用API提交答案并添加积分
+      try {
+        final result = await apiService.submitQuizAnswer(
+          quizId,
+          _selectedAnswer!,
+          userId: userIdValue.toString(),
+        );
 
-
-      if (result['success']) {
-        setState(() {
-          _submitResult = result['data'];
-          _isAnswered = true;
-        });
-      } else {
+        if (result['success']) {
+          // 答案提交成功，刷新用户数据以获取最新积分
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          await authProvider.refreshUserData();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("答案已提交，积分已更新！"),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            // 显示详细的错误信息
+            final errorMessage = result['error'] ?? '提交失败';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("提交失败: $errorMessage")),
+            );
+          }
+        }
+      } catch (e) {
         if (mounted) {
-          // 显示详细的错误信息
-          final errorMessage = result['error'] ?? '提交失败';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("提交失败: $errorMessage")),
+            SnackBar(content: Text("提交失败: $e")),
           );
         }
       }
-      */
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
