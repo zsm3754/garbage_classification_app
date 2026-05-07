@@ -55,10 +55,11 @@ class _ArticleRecommendPageState extends State<ArticleRecommendPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("garbage classification knowledge"),
+        title: const Text("垃圾小贴士"),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
       ),
       body: Container(
         decoration: const BoxDecoration(

@@ -34,20 +34,59 @@ class ApiService {
       final body = {'username': username, 'password': password};
       if (email != null) body['email'] = email;
       
+      debugPrint('注册请求: $baseUrl/user/register');
+      debugPrint('请求体: ${jsonEncode(body)}');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/user/register'),
         headers: _getHeaders(needAuth: false),
         body: jsonEncode(body),
-      );
+      ).timeout(const Duration(seconds: 10));
       
-      final data = jsonDecode(response.body);
+      debugPrint('响应状态码: ${response.statusCode}');
+      debugPrint('响应体: ${response.body}');
+      
+      // 检查响应是否为有效的JSON格式
+      if (response.body.isEmpty) {
+        return {'success': false, 'error': '服务器返回空响应'};
+      }
+      
+      Map<String, dynamic> data;
+      try {
+        data = jsonDecode(response.body);
+      } catch (e) {
+        // 如果不是JSON格式，直接返回原始响应
+        if (response.statusCode >= 500) {
+          return {'success': false, 'error': '服务器内部错误，请稍后重试'};
+        } else if (response.statusCode >= 400) {
+          return {'success': false, 'error': '请求错误，请检查输入信息'};
+        } else {
+          return {'success': false, 'error': '服务器响应格式错误: ${response.body}'};
+        }
+      }
+      
       if (response.statusCode == 200 && data['code'] == 200) {
         return {'success': true, 'data': data['data']};
       } else {
-        return {'success': false, 'error': data['msg'] ?? '注册失败'};
+        String errorMsg = data['msg'] ?? data['message'] ?? '注册失败';
+        if (response.statusCode >= 500) {
+          errorMsg = '服务器错误，请稍后重试';
+        } else if (response.statusCode == 400) {
+          errorMsg = '请求参数错误';
+        }
+        return {'success': false, 'error': errorMsg};
       }
     } catch (e) {
-      return {'success': false, 'error': e.toString()};
+      debugPrint('注册异常: $e');
+      String errorMsg = '注册失败';
+      if (e.toString().contains('Connection refused')) {
+        errorMsg = '无法连接到服务器，请检查网络';
+      } else if (e.toString().contains('timeout')) {
+        errorMsg = '请求超时，请重试';
+      } else if (e.toString().contains('SocketException')) {
+        errorMsg = '网络连接失败，请检查网络设置';
+      }
+      return {'success': false, 'error': errorMsg};
     }
   }
 

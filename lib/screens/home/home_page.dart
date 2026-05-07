@@ -1252,8 +1252,10 @@ class _ProfilePageState extends State<ProfilePage> {
             child: const Text("取消"),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              await authProvider.logout();
             },
             child: const Text("退出"),
           ),
